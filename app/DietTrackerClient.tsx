@@ -208,7 +208,14 @@ export function DietTrackerClient() {
               return (
                 <button
                   key={offset}
-                  onClick={() => setSelectedDayIndex(dayIdx)}
+                  onClick={() => {
+                    if (offset === 0) {
+                      // Current button goes to today
+                      setSelectedDayIndex(today.getDay());
+                    } else {
+                      setSelectedDayIndex(dayIdx);
+                    }
+                  }}
                   className={`py-3 px-6 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${
                     isSelected
                       ? isTodayDate
