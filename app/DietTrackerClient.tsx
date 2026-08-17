@@ -189,12 +189,14 @@ export function DietTrackerClient() {
 
         {/* Date & Navigation Combined */}
         <div className="bg-gradient-to-br from-white via-blue-50 to-cyan-50 rounded-3xl p-8 mb-6 shadow-xl border-2 border-emerald-200 backdrop-blur-sm">
-          <div className="text-center mb-6">
-            <div className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
-              {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+          {isToday && (
+            <div className="text-center mb-6">
+              <div className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
+                {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+              </div>
+              <div className="text-gray-600 font-semibold">⏰ {currentTime}</div>
             </div>
-            <div className="text-gray-600 font-semibold">⏰ {currentTime}</div>
-          </div>
+          )}
 
           <div className="flex justify-center gap-4">
             {[-1, 0, 1].map((offset) => {
