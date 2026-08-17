@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { dietPlan, dayNames, dayLabels, getFoodIcon } from '@/lib/diet-plan';
+import confetti from 'canvas-confetti';
 
 export function DietTrackerClient() {
   const [completedMeals, setCompletedMeals] = useState<Record<string, boolean>>({});
@@ -42,6 +43,28 @@ export function DietTrackerClient() {
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Trigger confetti when completing all meals
+  useEffect(() => {
+    const today = new Date();
+    const dayName = dayNames[today.getDay()];
+    const meals = dietPlan[dayName as keyof typeof dietPlan] || [];
+    const completedCount = meals.filter((meal: any) => {
+      const itemsCompleted = meal.items.every((_: string, idx: number) =>
+        completedItems[`${dayName}-${meal.id}_item_${idx}`]
+      );
+      return itemsCompleted && meal.items.length > 0;
+    }).length;
+
+    if (completedCount === meals.length && meals.length > 0) {
+      // Trigger confetti celebration
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.3 }
+      });
+    }
+  }, [completedItems]);
 
   const saveMealProgress = (newMeals: Record<string, boolean>) => {
     localStorage.setItem('dietTrackerProgress', JSON.stringify(newMeals));
@@ -112,6 +135,35 @@ export function DietTrackerClient() {
   const today = new Date();
   const selectedDate = new Date(today);
   selectedDate.setDate(selectedDate.getDate() + (selectedDayIndex - today.getDay()));
+
+  // Time-based color theming
+  const getTimeBasedColors = () => {
+    const hour = today.getHours();
+    if (hour >= 5 && hour < 12) {
+      // Morning: warm sunrise colors
+      return 'from-yellow-100 via-orange-50 to-pink-50';
+    } else if (hour >= 12 && hour < 17) {
+      // Afternoon: bright midday
+      return 'from-blue-50 via-cyan-50 to-emerald-50';
+    } else {
+      // Evening/Night: sunset colors
+      return 'from-purple-100 via-pink-50 to-orange-50';
+    }
+  };
+
+  // Day-specific subtle accent colors
+  const getDayColor = (idx: number) => {
+    const colors = [
+      'from-red-400 to-pink-500',      // Sunday
+      'from-orange-400 to-yellow-500',  // Monday
+      'from-yellow-400 to-green-500',   // Tuesday
+      'from-green-400 to-blue-500',     // Wednesday
+      'from-blue-400 to-purple-500',    // Thursday
+      'from-purple-400 to-pink-500',    // Friday
+      'from-pink-400 to-red-500'        // Saturday
+    ];
+    return colors[idx % colors.length];
+  };
 
   const dayName = dayNames[selectedDayIndex];
   const meals = dietPlan[dayName as keyof typeof dietPlan] || [];
@@ -229,7 +281,7 @@ export function DietTrackerClient() {
                       isSelected
                         ? isTodayDate
                           ? 'bg-gradient-to-br from-yellow-400 via-orange-400 to-red-400 text-white shadow-2xl scale-105'
-                          : 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-2xl scale-105'
+                          : `bg-gradient-to-br ${getDayColor(dayIdx)} text-white shadow-2xl scale-105`
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200 shadow-md'
                     }`}
                   >
@@ -248,7 +300,7 @@ export function DietTrackerClient() {
             <span className="flex items-center gap-2">📊 Daily Progress</span>
             <span className="text-emerald-600">{completedCount}/{meals.length} meals</span>
           </div>
-          <div className="w-full h-5 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full overflow-hidden shadow-inner">
+          <div className={`w-full h-5 bg-gradient-to-r from-gray-200 to-gray-300 rounded-full overflow-hidden shadow-inner ${progressPercentage === 100 ? 'animate-glow' : ''}`}>
             <div
               className="h-full bg-gradient-to-r from-emerald-500 via-green-400 to-teal-500 transition-all duration-500 shadow-lg"
               style={{ width: `${progressPercentage}%` }}
@@ -273,7 +325,7 @@ export function DietTrackerClient() {
         )}
 
         {/* Meals */}
-        <div className="space-y-4 mb-8">
+        <div className={`space-y-4 mb-8 rounded-3xl p-6 transition-all duration-500 ${isToday ? `bg-gradient-to-br ${getTimeBasedColors()}` : 'bg-white'}`}>
           {meals.map((meal: any, index: number) => {
             const mealKey = `${dayName}-${meal.id}`;
             const prevMealKey = index > 0 ? `${dayName}-${meals[index - 1].id}` : null;
@@ -297,9 +349,9 @@ export function DietTrackerClient() {
             const getCardStyles = () => {
               if (!isCompleted || isExpanded) {
                 return {
-                  container: `rounded-3xl shadow-lg border-l-4 transition-all duration-300 backdrop-blur-sm ${
+                  container: `rounded-3xl shadow-lg border-l-4 transition-all duration-500 backdrop-blur-sm ${
                     isCompleted
-                      ? 'border-l-emerald-600 bg-gradient-to-br from-emerald-100 via-green-50 to-teal-50 border-4 border-emerald-400'
+                      ? 'border-l-emerald-600 bg-gradient-to-br from-emerald-100 via-green-50 to-teal-50 border-4 border-emerald-400 animate-slide-down'
                       : 'border-l-orange-500 bg-gradient-to-br from-white to-orange-50 border-2 border-orange-200'
                   } ${isActive && !isCompleted ? 'opacity-100 -translate-y-2 shadow-2xl scale-105' : isToday && !isCompleted ? 'opacity-70' : 'opacity-100'} p-8`,
                   clickable: isCompleted ? 'cursor-pointer' : ''
@@ -307,7 +359,7 @@ export function DietTrackerClient() {
               }
               // Collapsed stacked style
               return {
-                container: `rounded-2xl shadow-md transition-all duration-300 cursor-pointer hover:shadow-lg hover:scale-105 bg-gradient-to-r from-emerald-500 to-green-600 border-none`,
+                container: `rounded-2xl shadow-md transition-all duration-500 cursor-pointer hover:shadow-lg hover:scale-105 bg-gradient-to-r from-emerald-500 to-green-600 border-none animate-slide-up`,
                 clickable: 'h-16 flex items-center px-6'
               };
             };
@@ -450,7 +502,7 @@ export function DietTrackerClient() {
                         >
                           {item}
                         </span>
-                        <span className="text-2xl flex-shrink-0">
+                        <span className={`text-2xl flex-shrink-0 ${itemCompleted ? 'animate-checkmark-bounce' : ''}`}>
                           {itemCompleted ? '✅' : '📌'}
                         </span>
                       </li>
