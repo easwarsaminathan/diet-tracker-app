@@ -187,19 +187,15 @@ export function DietTrackerClient() {
           <p className="text-sm text-gray-500">7-Day Ayurvedic Vegetarian Meal Plan</p>
         </div>
 
-        {/* Date & Time Display */}
-        <div className="bg-gradient-to-br from-white via-blue-50 to-cyan-50 rounded-3xl p-8 mb-6 shadow-xl border-2 border-emerald-200 backdrop-blur-sm text-center">
-          <div className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
-            {selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        {/* Date & Navigation Combined */}
+        <div className="bg-gradient-to-br from-white via-blue-50 to-cyan-50 rounded-3xl p-8 mb-6 shadow-xl border-2 border-emerald-200 backdrop-blur-sm">
+          <div className="text-center mb-6">
+            <div className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
+              {selectedDate.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}
+            </div>
+            <div className="text-gray-600 font-semibold">⏰ {currentTime}</div>
           </div>
-          <div className="text-xl font-bold text-emerald-600 mb-3 flex items-center justify-center gap-2">
-            {dayLabels[selectedDayIndex] === 'Sunday' ? '🎉' : '🌟'} {dayLabels[selectedDayIndex]}
-          </div>
-          <div className="text-gray-600 font-semibold">⏰ {currentTime}</div>
-        </div>
 
-        {/* Day Selector - Rolling 3 days */}
-        <div className="bg-gradient-to-br from-white to-blue-50 rounded-3xl p-8 mb-6 shadow-xl border-2 border-blue-200">
           <div className="flex justify-center gap-4">
             {[-1, 0, 1].map((offset) => {
               const date = new Date(selectedDate);
@@ -213,7 +209,7 @@ export function DietTrackerClient() {
                 <button
                   key={offset}
                   onClick={() => setSelectedDayIndex(dayIdx)}
-                  className={`py-4 px-8 rounded-2xl font-bold text-lg transition-all transform hover:scale-105 ${
+                  className={`py-3 px-6 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${
                     isSelected
                       ? isTodayDate
                         ? 'bg-gradient-to-br from-yellow-400 via-orange-400 to-red-400 text-white shadow-2xl scale-105'
@@ -222,7 +218,7 @@ export function DietTrackerClient() {
                   }`}
                 >
                   <div>{label}</div>
-                  <div className="text-xs opacity-80 mt-1">{dayLabels[dayIdx].substring(0, 3)} {date.getDate()}</div>
+                  <div className="text-xs opacity-80 mt-0.5">{dayLabels[dayIdx].substring(0, 3)}</div>
                 </button>
               );
             })}
