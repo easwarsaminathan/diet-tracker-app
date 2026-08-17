@@ -198,31 +198,31 @@ export function DietTrackerClient() {
           <div className="text-gray-600 font-semibold">⏰ {currentTime}</div>
         </div>
 
-        {/* Day Selector - 3 days only */}
+        {/* Day Selector - Rolling 3 days */}
         <div className="bg-gradient-to-br from-white to-blue-50 rounded-3xl p-8 mb-6 shadow-xl border-2 border-blue-200">
           <div className="flex justify-center gap-4">
-            {Array.from({ length: 3 }).map((_, i) => {
-              const offset = i - 1; // -1, 0, 1 for prev, today, next
-              const date = new Date(today);
+            {[-1, 0, 1].map((offset) => {
+              const date = new Date(selectedDate);
               date.setDate(date.getDate() + offset);
               const dayIdx = date.getDay();
-              const isSelected = dayIdx === selectedDayIndex;
-              const label = offset === -1 ? 'Prev' : offset === 0 ? 'Today' : 'Next';
+              const isSelected = offset === 0;
+              const label = offset === -1 ? '← Prev' : offset === 0 ? 'Current' : 'Next →';
+              const isTodayDate = date.toDateString() === today.toDateString();
 
               return (
                 <button
-                  key={i}
+                  key={offset}
                   onClick={() => setSelectedDayIndex(dayIdx)}
                   className={`py-4 px-8 rounded-2xl font-bold text-lg transition-all transform hover:scale-105 ${
                     isSelected
-                      ? offset === 0
+                      ? isTodayDate
                         ? 'bg-gradient-to-br from-yellow-400 via-orange-400 to-red-400 text-white shadow-2xl scale-105'
                         : 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-2xl scale-105'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200 shadow-md'
                   }`}
                 >
                   <div>{label}</div>
-                  <div className="text-xs opacity-80 mt-1">{dayLabels[dayIdx].substring(0, 3)}</div>
+                  <div className="text-xs opacity-80 mt-1">{dayLabels[dayIdx].substring(0, 3)} {date.getDate()}</div>
                 </button>
               );
             })}
