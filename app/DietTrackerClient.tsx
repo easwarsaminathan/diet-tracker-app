@@ -93,7 +93,9 @@ export function DietTrackerClient() {
     saveMealProgress(newMeals);
 
     // If checking meal, check all items. If unchecking, uncheck all items.
-    const [dayName, mealId] = mealKey.split('-');
+    const parts = mealKey.split('-');
+    const dayName = parts[0];
+    const mealId = parts.slice(1).join('-');
     const meals = dietPlan[dayName as keyof typeof dietPlan] || [];
     const meal = meals.find((m: any) => m.id === mealId);
 
@@ -182,8 +184,7 @@ export function DietTrackerClient() {
           <h1 className="text-5xl sm:text-6xl font-bold bg-gradient-to-r from-emerald-600 via-green-500 to-teal-500 bg-clip-text text-transparent mb-3">
             Anti-Inflammatory Diet Tracker
           </h1>
-          <p className="text-lg text-gray-700 font-medium">🌿 Your Daily Wellness Companion</p>
-          <p className="text-sm text-gray-500 mt-2">7-Day Ayurvedic Vegetarian Meal Plan</p>
+          <p className="text-sm text-gray-500">7-Day Ayurvedic Vegetarian Meal Plan</p>
         </div>
 
         {/* Date & Time Display */}
@@ -197,30 +198,31 @@ export function DietTrackerClient() {
           <div className="text-gray-600 font-semibold">⏰ {currentTime}</div>
         </div>
 
-        {/* Day Selector */}
+        {/* Day Selector - 3 days only */}
         <div className="bg-gradient-to-br from-white to-blue-50 rounded-3xl p-8 mb-6 shadow-xl border-2 border-blue-200">
-          <div className="font-bold text-gray-800 mb-6 text-lg flex items-center gap-2">📅 Select a Day to View Plan</div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-            {Array.from({ length: 7 }).map((_, i) => {
+          <div className="flex justify-center gap-4">
+            {Array.from({ length: 3 }).map((_, i) => {
+              const offset = i - 1; // -1, 0, 1 for prev, today, next
               const date = new Date(today);
-              date.setDate(date.getDate() + i);
+              date.setDate(date.getDate() + offset);
               const dayIdx = date.getDay();
               const isSelected = dayIdx === selectedDayIndex;
-              const isDayToday = i === 0;
+              const label = offset === -1 ? 'Prev' : offset === 0 ? 'Today' : 'Next';
 
               return (
                 <button
                   key={i}
                   onClick={() => setSelectedDayIndex(dayIdx)}
-                  className={`py-3 px-3 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${
+                  className={`py-4 px-8 rounded-2xl font-bold text-lg transition-all transform hover:scale-105 ${
                     isSelected
-                      ? isDayToday
+                      ? offset === 0
                         ? 'bg-gradient-to-br from-yellow-400 via-orange-400 to-red-400 text-white shadow-2xl scale-105'
                         : 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-2xl scale-105'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200 shadow-md'
                   }`}
                 >
-                  {dayLabels[dayIdx].substring(0, 3)}
+                  <div>{label}</div>
+                  <div className="text-xs opacity-80 mt-1">{dayLabels[dayIdx].substring(0, 3)}</div>
                 </button>
               );
             })}
@@ -345,8 +347,8 @@ export function DietTrackerClient() {
                         onClick={(e) => {
                           e.stopPropagation();
                           if (isToday) {
-                            const currentState = completedMeals[mealKey] || false;
-                            handleMealCheck(mealKey, !currentState);
+                            const allItemsDone = completedItemsCount === meal.items.length && meal.items.length > 0;
+                            handleMealCheck(mealKey, !allItemsDone);
                           }
                         }}
                         className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all cursor-pointer border-4 ${
