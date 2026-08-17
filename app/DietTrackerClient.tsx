@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { dietPlan, dayNames, dayLabels } from '@/lib/diet-plan';
+import { dietPlan, dayNames, dayLabels, getFoodIcon } from '@/lib/diet-plan';
 
 export function DietTrackerClient() {
   const [completedMeals, setCompletedMeals] = useState<Record<string, boolean>>({});
@@ -365,6 +365,7 @@ export function DietTrackerClient() {
                   {meal.items.map((item: string, idx: number) => {
                     const itemKey = `${dayName}-${meal.id}_item_${idx}`;
                     const itemCompleted = completedItems[itemKey] || false;
+                    const foodIcon = getFoodIcon(item);
 
                     return (
                       <li
@@ -372,7 +373,7 @@ export function DietTrackerClient() {
                         className={`flex items-start gap-4 p-4 rounded-xl transition-all shadow-sm hover:shadow-md ${
                           itemCompleted
                             ? 'bg-gradient-to-r from-emerald-100 to-green-100 border-2 border-emerald-400'
-                            : 'bg-gradient-to-r from-orange-50 to-white hover:from-blue-50 hover:to-green-50 border-2 border-orange-200'
+                            : `${foodIcon.bgColor} border-2 border-gray-200 hover:shadow-lg`
                         }`}
                       >
                         <input
@@ -382,6 +383,12 @@ export function DietTrackerClient() {
                           disabled={!isToday}
                           className={`mt-1 w-6 h-6 cursor-pointer accent-emerald-600 flex-shrink-0 ${!isToday ? 'opacity-50 cursor-not-allowed' : ''}`}
                         />
+
+                        {/* Food Icon with Color */}
+                        <div className={`text-2xl ${foodIcon.color} flex-shrink-0 p-2 rounded-lg ${foodIcon.bgColor}`}>
+                          {foodIcon.emoji}
+                        </div>
+
                         <span
                           className={`text-lg font-semibold leading-relaxed flex-1 ${
                             itemCompleted

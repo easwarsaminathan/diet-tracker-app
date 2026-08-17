@@ -189,3 +189,39 @@ export const dietPlan = {
 
 export const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 export const dayLabels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+// Food category mapping for colors and icons
+export const foodCategories: Record<string, { emoji: string; color: string; bgColor: string }> = {
+  water: { emoji: '💧', color: 'text-blue-600', bgColor: 'bg-blue-100' },
+  tea: { emoji: '🍵', color: 'text-amber-600', bgColor: 'bg-amber-100' },
+  nuts: { emoji: '🥜', color: 'text-yellow-700', bgColor: 'bg-yellow-100' },
+  rice: { emoji: '🍚', color: 'text-orange-600', bgColor: 'bg-orange-100' },
+  curry: { emoji: '🍲', color: 'text-red-600', bgColor: 'bg-red-100' },
+  vegetables: { emoji: '🥬', color: 'text-green-600', bgColor: 'bg-green-100' },
+  bread: { emoji: '🥖', color: 'text-orange-700', bgColor: 'bg-yellow-50' },
+  salad: { emoji: '🥗', color: 'text-green-700', bgColor: 'bg-green-50' },
+  soup: { emoji: '🍜', color: 'text-orange-600', bgColor: 'bg-orange-50' },
+  fruit: { emoji: '🍎', color: 'text-red-600', bgColor: 'bg-red-50' },
+  juice: { emoji: '🧃', color: 'text-pink-600', bgColor: 'bg-pink-100' },
+  herbs: { emoji: '🌿', color: 'text-teal-600', bgColor: 'bg-teal-50' },
+  default: { emoji: '🥘', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+};
+
+export function getFoodIcon(itemName: string): { emoji: string; color: string; bgColor: string } {
+  const item = itemName.toLowerCase();
+
+  if (item.includes('water') || item.includes('juice') || item.includes('coconut water')) return foodCategories.water;
+  if (item.includes('tea') || item.includes('chai')) return foodCategories.tea;
+  if (item.includes('nut') || item.includes('almond') || item.includes('walnut')) return foodCategories.nuts;
+  if (item.includes('rice')) return foodCategories.rice;
+  if (item.includes('curry')) return foodCategories.curry;
+  if (item.includes('vegetable') || item.includes('carrot') || item.includes('spinach') || item.includes('lady finger')) return foodCategories.vegetables;
+  if (item.includes('roti') || item.includes('dosa') || item.includes('bread')) return foodCategories.bread;
+  if (item.includes('salad')) return foodCategories.salad;
+  if (item.includes('soup')) return foodCategories.soup;
+  if (item.includes('fruit') || item.includes('orange') || item.includes('apple') || item.includes('kiwi') || item.includes('pomegranate') || item.includes('jamun') || item.includes('mango')) return foodCategories.fruit;
+  if (item.includes('smoothie')) return foodCategories.juice;
+  if (item.includes('turmeric') || item.includes('ginger') || item.includes('garlic') || item.includes('pepper') || item.includes('honey')) return foodCategories.herbs;
+
+  return foodCategories.default;
+}
