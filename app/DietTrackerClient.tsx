@@ -297,7 +297,7 @@ export function DietTrackerClient() {
               }
               // Collapsed stacked style
               return {
-                container: `rounded-2xl shadow-md transition-all duration-300 cursor-pointer hover:shadow-lg hover:scale-102 bg-gradient-to-r from-emerald-500 to-green-600 border-none`,
+                container: `rounded-2xl shadow-md transition-all duration-300 cursor-pointer hover:shadow-lg hover:scale-105 bg-gradient-to-r from-emerald-500 to-green-600 border-none`,
                 clickable: 'h-16 flex items-center px-6'
               };
             };
