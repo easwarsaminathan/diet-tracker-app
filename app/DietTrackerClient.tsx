@@ -283,41 +283,48 @@ export function DietTrackerClient() {
               ? canCollapse ? expandedMeals[mealKey] : true
               : true; // Default to expanded
 
+            // Stacked card styling for collapsed completed meals
+            const getCardStyles = () => {
+              if (!isCompleted || isExpanded) {
+                return {
+                  container: `rounded-3xl shadow-lg border-l-4 transition-all duration-300 backdrop-blur-sm ${
+                    isCompleted
+                      ? 'border-l-emerald-600 bg-gradient-to-br from-emerald-100 via-green-50 to-teal-50 border-4 border-emerald-400'
+                      : 'border-l-orange-500 bg-gradient-to-br from-white to-orange-50 border-2 border-orange-200'
+                  } ${isActive && !isCompleted ? 'opacity-100 -translate-y-2 shadow-2xl scale-105' : isToday && !isCompleted ? 'opacity-70' : 'opacity-100'} p-8`,
+                  clickable: isCompleted ? 'cursor-pointer' : ''
+                };
+              }
+              // Collapsed stacked style
+              return {
+                container: `rounded-2xl shadow-md transition-all duration-300 cursor-pointer hover:shadow-lg hover:scale-102 bg-gradient-to-r from-emerald-500 to-green-600 border-none`,
+                clickable: 'h-16 flex items-center px-6'
+              };
+            };
+
+            const styles = getCardStyles();
+
             return (
               <div
                 key={meal.id}
-                className={`rounded-3xl shadow-lg border-l-4 transition-all duration-300 backdrop-blur-sm ${
-                  isCompleted ? 'cursor-pointer' : ''
-                } ${
-                  isCompleted
-                    ? 'border-l-emerald-600 bg-gradient-to-br from-emerald-100 via-green-50 to-teal-50 border-4 border-emerald-400'
-                    : 'border-l-orange-500 bg-gradient-to-br from-white to-orange-50 border-2 border-orange-200'
-                } ${isActive && !isCompleted ? 'opacity-100 -translate-y-2 shadow-2xl scale-105' : isToday ? 'opacity-70' : 'opacity-100'} ${
-                  isExpanded ? 'p-8' : 'p-4'
-                }`}
+                className={`${styles.container} ${styles.clickable}`}
                 onClick={() => isCompleted && toggleMealExpanded(mealKey)}
               >
-                {/* Collapsed View - Only for COMPLETED meals */}
+                {/* Collapsed View - Stacked Header Style */}
                 {!isExpanded && isCompleted && (
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-3">
-                      <div className="text-4xl">
+                  <div className="flex items-center justify-between gap-4 w-full">
+                    <div className="flex items-center gap-4 flex-1">
+                      <div className="text-3xl text-white">
                         {meal.icon}
                       </div>
-                      <div>
-                        <div className="text-lg font-bold text-emerald-800">
+                      <div className="flex-1">
+                        <div className="text-lg font-bold text-white">
                           {meal.name}
-                        </div>
-                        <div className="text-xs font-semibold text-emerald-700">
-                          {completedItemsCount}/{meal.items.length} items
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-3xl">✅</span>
-                      <span className="text-2xl transition-transform rotate-180">
-                        ▼
-                      </span>
+                    <div className="flex items-center gap-3 text-white">
+                      <span className="text-xl">✅</span>
                     </div>
                   </div>
                 )}
