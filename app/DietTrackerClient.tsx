@@ -57,7 +57,11 @@ export function DietTrackerClient() {
     saveItemProgress(newItems);
 
     // Check if all items in this meal are done
-    const [dayName, mealId] = itemKey.split('_items_')[0].split('_item_')[0].split('-');
+    // itemKey format: "monday-mon-1_item_0"
+    const mealKeyPart = itemKey.split('_item_')[0]; // "monday-mon-1"
+    const parts = mealKeyPart.split('-');
+    const dayName = parts[0]; // "monday"
+    const mealId = parts.slice(1).join('-'); // "mon-1"
     const mealKey = `${dayName}-${mealId}`;
     const meals = dietPlan[dayName as keyof typeof dietPlan] || [];
     const meal = meals.find((m: any) => m.id === mealId);

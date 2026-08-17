@@ -190,21 +190,21 @@ export const dietPlan = {
 export const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
 export const dayLabels = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 
-// Food category mapping for colors and icons
+// Food category mapping for colors and icons (Green & Teal theme)
 export const foodCategories: Record<string, { emoji: string; color: string; bgColor: string }> = {
-  water: { emoji: '💧', color: 'text-blue-600', bgColor: 'bg-blue-100' },
-  tea: { emoji: '🍵', color: 'text-amber-600', bgColor: 'bg-amber-100' },
-  nuts: { emoji: '🥜', color: 'text-yellow-700', bgColor: 'bg-yellow-100' },
-  rice: { emoji: '🍚', color: 'text-orange-600', bgColor: 'bg-orange-100' },
-  curry: { emoji: '🍲', color: 'text-red-600', bgColor: 'bg-red-100' },
+  water: { emoji: '💧', color: 'text-cyan-600', bgColor: 'bg-cyan-100' },
+  tea: { emoji: '🍵', color: 'text-teal-600', bgColor: 'bg-teal-100' },
+  nuts: { emoji: '🥜', color: 'text-emerald-600', bgColor: 'bg-emerald-100' },
+  rice: { emoji: '🍚', color: 'text-green-700', bgColor: 'bg-green-100' },
+  curry: { emoji: '🍲', color: 'text-teal-700', bgColor: 'bg-teal-50' },
   vegetables: { emoji: '🥬', color: 'text-green-600', bgColor: 'bg-green-100' },
-  bread: { emoji: '🥖', color: 'text-orange-700', bgColor: 'bg-yellow-50' },
+  bread: { emoji: '🥖', color: 'text-emerald-700', bgColor: 'bg-emerald-50' },
   salad: { emoji: '🥗', color: 'text-green-700', bgColor: 'bg-green-50' },
-  soup: { emoji: '🍜', color: 'text-orange-600', bgColor: 'bg-orange-50' },
-  fruit: { emoji: '🍎', color: 'text-red-600', bgColor: 'bg-red-50' },
-  juice: { emoji: '🧃', color: 'text-pink-600', bgColor: 'bg-pink-100' },
-  herbs: { emoji: '🌿', color: 'text-teal-600', bgColor: 'bg-teal-50' },
-  default: { emoji: '🥘', color: 'text-gray-600', bgColor: 'bg-gray-100' },
+  soup: { emoji: '🍜', color: 'text-cyan-600', bgColor: 'bg-cyan-50' },
+  fruit: { emoji: '🍎', color: 'text-emerald-600', bgColor: 'bg-emerald-50' },
+  juice: { emoji: '🧃', color: 'text-teal-600', bgColor: 'bg-teal-50' },
+  herbs: { emoji: '🌿', color: 'text-green-600', bgColor: 'bg-green-50' },
+  default: { emoji: '🥘', color: 'text-emerald-600', bgColor: 'bg-emerald-100' },
 };
 
 export function getFoodIcon(itemName: string): { emoji: string; color: string; bgColor: string } {
