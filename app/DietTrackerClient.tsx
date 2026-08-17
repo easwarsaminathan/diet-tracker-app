@@ -130,12 +130,35 @@ export function DietTrackerClient() {
   const tomorrowDayName = dayNames[tomorrowDayIndex];
   const tomorrowMeals = dietPlan[tomorrowDayName as keyof typeof dietPlan] || [];
 
+  // For sprouts, check 2 days ahead (need soaking 2 days before)
+  const sproutPrepDate = new Date(selectedDate);
+  sproutPrepDate.setDate(sproutPrepDate.getDate() + 2);
+  const sproutPrepDayIndex = sproutPrepDate.getDay();
+  const sproutPrepDayName = dayNames[sproutPrepDayIndex];
+  const sproutPrepMeals = dietPlan[sproutPrepDayName as keyof typeof dietPlan] || [];
+
   const tomorrowPrepItems = new Set<string>();
+
+  // Soaked and peeled items - prep 1 day before (tomorrow)
   tomorrowMeals.forEach((meal: any) => {
     meal.items.forEach((item: string) => {
       const lowerItem = item.toLowerCase();
-      if (lowerItem.includes('soaked') || lowerItem.includes('peeled') || lowerItem.includes('sprout')) {
+      if ((lowerItem.includes('soaked') || lowerItem.includes('peeled')) && !lowerItem.includes('sprout')) {
         tomorrowPrepItems.add(item);
+      }
+    });
+  });
+
+  // Sprout items - prep 2 days before
+  const sproutPrepItems = new Set<string>();
+  sproutPrepMeals.forEach((meal: any) => {
+    meal.items.forEach((item: string) => {
+      const lowerItem = item.toLowerCase();
+      if (lowerItem.includes('sprout') || lowerItem.includes('sprouted')) {
+        // Format: "Soak for sprouting: [item name]"
+        const itemName = item.replace(/sprouted\s+/i, '').replace(/\s+sprout/i, '').trim();
+        tomorrowPrepItems.add(`🌱 Soak for sprouting: ${itemName} (needed for ${dayLabels[sproutPrepDayIndex]})`);
+        sproutPrepItems.add(itemName);
       }
     });
   });
@@ -321,7 +344,10 @@ export function DietTrackerClient() {
                       <div
                         onClick={(e) => {
                           e.stopPropagation();
-                          isToday && handleMealCheck(mealKey, !isCompleted);
+                          if (isToday) {
+                            const currentState = completedMeals[mealKey] || false;
+                            handleMealCheck(mealKey, !currentState);
+                          }
                         }}
                         className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all cursor-pointer border-4 ${
                           isToday ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
@@ -333,7 +359,7 @@ export function DietTrackerClient() {
                       >
                         <input
                           type="checkbox"
-                          checked={isCompleted}
+                          checked={completedItemsCount === meal.items.length && meal.items.length > 0}
                           onChange={(e) => {
                             e.stopPropagation();
                             handleMealCheck(mealKey, e.target.checked);
@@ -419,13 +445,20 @@ export function DietTrackerClient() {
         {/* Next Day Prep */}
         <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-white rounded-3xl p-8 border-t-4 border-blue-500 shadow-xl mb-8 border-2 border-blue-200">
           <div className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent mb-2 flex items-center gap-3">
-            🌙 Tomorrow's Preparation
+            🌙 Preparation Ahead
           </div>
-          <div className="text-gray-700 font-semibold mb-6 text-lg">Get ready for {dayLabels[tomorrowDayIndex]}</div>
+          <div className="text-gray-700 font-semibold mb-6 text-lg">
+            <div>📅 Tomorrow: {dayLabels[tomorrowDayIndex]}</div>
+            <div className="text-sm text-gray-600 mt-1">
+              {sproutPrepItems.size > 0 && `(+ Sprouts for ${dayLabels[sproutPrepDayIndex]})`}
+            </div>
+          </div>
 
           {tomorrowPrepItems.size > 0 && (
             <div className="mb-6">
-              <div className="font-bold text-blue-600 mb-3">🌙 Items to Soak Overnight</div>
+              <div className="font-bold text-blue-600 mb-3">
+                {sproutPrepItems.size > 0 ? '🌙 Items to Soak Overnight (1 day)' : '🌙 Items to Soak Overnight'}
+              </div>
               <div className="space-y-2">
                 {Array.from(tomorrowPrepItems).map((item, idx) => (
                   <div key={idx} className="flex items-start gap-3 p-3 bg-blue-50 border-l-3 border-blue-500 rounded-lg">
