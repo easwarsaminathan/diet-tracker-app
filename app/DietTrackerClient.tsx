@@ -204,7 +204,7 @@ export function DietTrackerClient() {
             )}
           </div>
 
-          <div className="flex justify-center gap-4">
+          <div className="flex justify-between items-center gap-4">
             {[-1, 0, 1].map((offset) => {
               const date = new Date(selectedDate);
               date.setDate(date.getDate() + offset);
@@ -212,29 +212,31 @@ export function DietTrackerClient() {
               const isSelected = offset === 0;
               const label = offset === -1 ? '← Prev' : offset === 0 ? 'Current' : 'Next →';
               const isTodayDate = date.toDateString() === today.toDateString();
+              const positionClass = offset === -1 ? 'justify-start' : offset === 1 ? 'justify-end' : 'justify-center flex-1';
 
               return (
-                <button
-                  key={offset}
-                  onClick={() => {
-                    if (offset === 0) {
-                      // Current button goes to today
-                      setSelectedDayIndex(today.getDay());
-                    } else {
-                      setSelectedDayIndex(dayIdx);
-                    }
-                  }}
-                  className={`py-3 px-6 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${
-                    isSelected
-                      ? isTodayDate
-                        ? 'bg-gradient-to-br from-yellow-400 via-orange-400 to-red-400 text-white shadow-2xl scale-105'
-                        : 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-2xl scale-105'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200 shadow-md'
-                  }`}
-                >
-                  <div>{label}</div>
-                  <div className="text-xs opacity-80 mt-0.5">{dayLabels[dayIdx].substring(0, 3)}</div>
-                </button>
+                <div key={offset} className={`flex ${positionClass}`}>
+                  <button
+                    onClick={() => {
+                      if (offset === 0) {
+                        // Current button goes to today
+                        setSelectedDayIndex(today.getDay());
+                      } else {
+                        setSelectedDayIndex(dayIdx);
+                      }
+                    }}
+                    className={`py-3 px-6 rounded-xl font-bold text-sm transition-all transform hover:scale-105 ${
+                      isSelected
+                        ? isTodayDate
+                          ? 'bg-gradient-to-br from-yellow-400 via-orange-400 to-red-400 text-white shadow-2xl scale-105'
+                          : 'bg-gradient-to-br from-emerald-500 to-green-600 text-white shadow-2xl scale-105'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200 shadow-md'
+                    }`}
+                  >
+                    <div>{label}</div>
+                    <div className="text-xs opacity-80 mt-0.5">{dayLabels[dayIdx].substring(0, 3)}</div>
+                  </button>
+                </div>
               );
             })}
           </div>
