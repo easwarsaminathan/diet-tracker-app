@@ -245,42 +245,45 @@ export function DietTrackerClient() {
             const isCompleted = completedItemsCount === meal.items.length && meal.items.length > 0;
             const progress = Math.round((completedItemsCount / meal.items.length) * 100);
 
-            // Determine if expanded - completed meals default to collapsed, active ones expanded
+            // Determine if expanded - ONLY completed meals can collapse, incomplete always expanded
+            const canCollapse = isCompleted;
             const isExpanded = expandedMeals[mealKey] !== undefined
-              ? expandedMeals[mealKey]
-              : isCompleted ? false : true;
+              ? canCollapse ? expandedMeals[mealKey] : true
+              : true; // Default to expanded
 
             return (
               <div
                 key={meal.id}
-                className={`rounded-3xl shadow-lg border-l-4 transition-all duration-300 backdrop-blur-sm cursor-pointer ${
+                className={`rounded-3xl shadow-lg border-l-4 transition-all duration-300 backdrop-blur-sm ${
+                  isCompleted ? 'cursor-pointer' : ''
+                } ${
                   isCompleted
                     ? 'border-l-emerald-600 bg-gradient-to-br from-emerald-100 via-green-50 to-teal-50 border-4 border-emerald-400'
                     : 'border-l-orange-500 bg-gradient-to-br from-white to-orange-50 border-2 border-orange-200'
                 } ${isActive && !isCompleted ? 'opacity-100 -translate-y-2 shadow-2xl scale-105' : isToday ? 'opacity-70' : 'opacity-100'} ${
                   isExpanded ? 'p-8' : 'p-4'
                 }`}
-                onClick={() => toggleMealExpanded(mealKey)}
+                onClick={() => isCompleted && toggleMealExpanded(mealKey)}
               >
-                {/* Collapsed View */}
-                {!isExpanded && (
+                {/* Collapsed View - Only for COMPLETED meals */}
+                {!isExpanded && isCompleted && (
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-3">
-                      <div className={`text-4xl ${isCompleted ? 'opacity-100' : ''}`}>
+                      <div className="text-4xl">
                         {meal.icon}
                       </div>
                       <div>
-                        <div className={`text-lg font-bold ${isCompleted ? 'text-emerald-800' : 'text-gray-800'}`}>
+                        <div className="text-lg font-bold text-emerald-800">
                           {meal.name}
                         </div>
-                        <div className={`text-xs font-semibold ${isCompleted ? 'text-emerald-700' : 'text-orange-700'}`}>
+                        <div className="text-xs font-semibold text-emerald-700">
                           {completedItemsCount}/{meal.items.length} items
                         </div>
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      {isCompleted && <span className="text-3xl">✅</span>}
-                      <span className={`text-2xl transition-transform ${isExpanded ? 'rotate-180' : ''}`}>
+                      <span className="text-3xl">✅</span>
+                      <span className="text-2xl transition-transform rotate-180">
                         ▼
                       </span>
                     </div>
@@ -304,7 +307,7 @@ export function DietTrackerClient() {
                             {meal.name}
                           </div>
                           <div className="text-xs text-gray-600 mt-2 font-semibold">
-                            {isToday && !isCompleted ? '👆 Check box to mark all items as done' : ''}
+                            {isToday && !isCompleted ? '👆 Click the progress box to check/uncheck all items at once' : ''}
                             {isCompleted ? '✨ All items completed!' : ''}
                           </div>
                         </div>
