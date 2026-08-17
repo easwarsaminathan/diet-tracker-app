@@ -5,15 +5,21 @@ import { dietPlan, dayNames, dayLabels } from '@/lib/diet-plan';
 
 export function DietTrackerClient() {
   const [completedMeals, setCompletedMeals] = useState<Record<string, boolean>>({});
+  const [completedItems, setCompletedItems] = useState<Record<string, boolean>>({});
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [currentTime, setCurrentTime] = useState('');
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     // Load from localStorage
-    const saved = localStorage.getItem('dietTrackerProgress');
-    if (saved) {
-      setCompletedMeals(JSON.parse(saved));
+    const savedMeals = localStorage.getItem('dietTrackerProgress');
+    if (savedMeals) {
+      setCompletedMeals(JSON.parse(savedMeals));
+    }
+
+    const savedItems = localStorage.getItem('dietTrackerItems');
+    if (savedItems) {
+      setCompletedItems(JSON.parse(savedItems));
     }
 
     const today = new Date();
@@ -36,14 +42,57 @@ export function DietTrackerClient() {
     return () => clearInterval(interval);
   }, []);
 
-  const saveProgress = (newMeals: Record<string, boolean>) => {
+  const saveMealProgress = (newMeals: Record<string, boolean>) => {
     localStorage.setItem('dietTrackerProgress', JSON.stringify(newMeals));
+  };
+
+  const saveItemProgress = (newItems: Record<string, boolean>) => {
+    localStorage.setItem('dietTrackerItems', JSON.stringify(newItems));
+  };
+
+  const handleItemCheck = (itemKey: string, checked: boolean) => {
+    const newItems = { ...completedItems, [itemKey]: checked };
+    setCompletedItems(newItems);
+    saveItemProgress(newItems);
+
+    // Check if all items in this meal are done
+    const [dayName, mealId] = itemKey.split('_items_')[0].split('_item_')[0].split('-');
+    const mealKey = `${dayName}-${mealId}`;
+    const meals = dietPlan[dayName as keyof typeof dietPlan] || [];
+    const meal = meals.find((m: any) => m.id === mealId);
+
+    if (meal) {
+      const allItemsCompleted = meal.items.every((_, idx) =>
+        newItems[`${dayName}-${mealId}_item_${idx}`]
+      );
+
+      if (allItemsCompleted) {
+        // Auto-complete the meal
+        const newMeals = { ...completedMeals, [mealKey]: true };
+        setCompletedMeals(newMeals);
+        saveMealProgress(newMeals);
+      }
+    }
   };
 
   const handleMealCheck = (mealKey: string, checked: boolean) => {
     const newMeals = { ...completedMeals, [mealKey]: checked };
     setCompletedMeals(newMeals);
-    saveProgress(newMeals);
+    saveMealProgress(newMeals);
+
+    // If checking meal, check all items. If unchecking, uncheck all items.
+    const [dayName, mealId] = mealKey.split('-');
+    const meals = dietPlan[dayName as keyof typeof dietPlan] || [];
+    const meal = meals.find((m: any) => m.id === mealId);
+
+    if (meal) {
+      const newItems = { ...completedItems };
+      meal.items.forEach((_, idx) => {
+        newItems[`${dayName}-${mealId}_item_${idx}`] = checked;
+      });
+      setCompletedItems(newItems);
+      saveItemProgress(newItems);
+    }
   };
 
   const today = new Date();
@@ -54,9 +103,12 @@ export function DietTrackerClient() {
   const meals = dietPlan[dayName as keyof typeof dietPlan] || [];
   const isToday = dayNames[today.getDay()] === dayName;
 
-  const completedCount = meals.filter((meal: any) =>
-    completedMeals[`${dayName}-${meal.id}`]
-  ).length;
+  const completedCount = meals.filter((meal: any) => {
+    const itemsCompleted = meal.items.every((_: string, idx: number) =>
+      completedItems[`${dayName}-${meal.id}_item_${idx}`]
+    );
+    return itemsCompleted && meal.items.length > 0;
+  }).length;
 
   const progressPercentage = meals.length > 0 ? (completedCount / meals.length) * 100 : 0;
 
@@ -171,46 +223,107 @@ export function DietTrackerClient() {
         )}
 
         {/* Meals */}
-        <div className="space-y-5 mb-8">
+        <div className="space-y-6 mb-8">
           {meals.map((meal: any, index: number) => {
             const mealKey = `${dayName}-${meal.id}`;
-            const isCompleted = completedMeals[mealKey] || false;
             const prevMealKey = index > 0 ? `${dayName}-${meals[index - 1].id}` : null;
             const isActive = isToday && (index === 0 || (prevMealKey && completedMeals[prevMealKey]));
+
+            // Check how many items are completed
+            const completedItemsCount = meal.items.filter((_: string, idx: number) =>
+              completedItems[`${dayName}-${meal.id}_item_${idx}`]
+            ).length;
+
+            const isCompleted = completedItemsCount === meal.items.length && meal.items.length > 0;
+            const progress = Math.round((completedItemsCount / meal.items.length) * 100);
 
             return (
               <div
                 key={meal.id}
-                className={`rounded-2xl p-6 shadow-lg border-l-4 transition-all duration-300 backdrop-blur-sm ${
+                className={`rounded-3xl p-8 shadow-lg border-l-4 transition-all duration-300 backdrop-blur-sm ${
                   isCompleted
-                    ? 'border-l-green-500 bg-gradient-to-br from-green-100 via-teal-50 to-emerald-50 border-2 border-green-300'
-                    : 'border-l-red-500 bg-white border-2 border-gray-200'
-                } ${isActive ? 'opacity-100 -translate-y-2 shadow-2xl scale-105' : 'opacity-50'} ${
-                  !isToday ? 'opacity-100' : ''
-                }`}
+                    ? 'border-l-emerald-600 bg-gradient-to-br from-emerald-100 via-green-50 to-teal-50 border-4 border-emerald-400'
+                    : 'border-l-orange-500 bg-gradient-to-br from-white to-orange-50 border-2 border-orange-200'
+                } ${isActive ? 'opacity-100 -translate-y-2 shadow-2xl scale-105' : isToday ? 'opacity-70' : 'opacity-100'}`}
               >
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="text-4xl">{meal.icon}</div>
-                  <div className="flex-1">
-                    <div className="text-sm text-gray-500 font-semibold uppercase tracking-wide">{meal.time}</div>
-                    <div className="text-2xl font-bold text-gray-800">{meal.name}</div>
+                {/* Meal Header */}
+                <div className="flex items-center justify-between gap-4 mb-6">
+                  <div className="flex items-center gap-4">
+                    <div className={`text-5xl p-3 rounded-xl ${isCompleted ? 'bg-emerald-200' : 'bg-orange-200'}`}>
+                      {meal.icon}
+                    </div>
+                    <div className="flex-1">
+                      <div className={`text-xs font-bold uppercase tracking-wider ${isCompleted ? 'text-emerald-700' : 'text-orange-700'}`}>
+                        {meal.time}
+                      </div>
+                      <div className={`text-3xl font-bold ${isCompleted ? 'text-emerald-800' : 'text-gray-800'}`}>
+                        {meal.name}
+                      </div>
+                    </div>
                   </div>
-                  <input
-                    type="checkbox"
-                    checked={isCompleted}
-                    onChange={(e) => handleMealCheck(mealKey, e.target.checked)}
-                    disabled={!isToday}
-                    className={`w-8 h-8 cursor-pointer accent-red-500 ${!isToday ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  />
+                  <div className="flex flex-col items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={isCompleted}
+                      onChange={(e) => handleMealCheck(mealKey, e.target.checked)}
+                      disabled={!isToday}
+                      className={`w-10 h-10 cursor-pointer accent-emerald-500 ${!isToday ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    />
+                    <span className={`text-xs font-bold ${isCompleted ? 'text-emerald-700' : 'text-orange-700'}`}>
+                      {completedItemsCount}/{meal.items.length}
+                    </span>
+                  </div>
                 </div>
 
-                <ul className="space-y-2 border-t-2 border-gray-300 pt-4">
-                  {meal.items.map((item: string, idx: number) => (
-                    <li key={idx} className="flex items-start gap-3 p-3 bg-gradient-to-r from-gray-50 to-white rounded-lg hover:from-blue-50 hover:to-green-50 transition-all shadow-sm hover:shadow-md">
-                      <span className="text-xl mt-0.5 flex-shrink-0">{isCompleted ? '✅' : '🥘'}</span>
-                      <span className={`text-sm font-medium ${isCompleted ? 'text-green-700 line-through opacity-70' : 'text-gray-700'}`}>{item}</span>
-                    </li>
-                  ))}
+                {/* Progress Bar */}
+                <div className="mb-6 bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-300 ${
+                      isCompleted
+                        ? 'bg-gradient-to-r from-emerald-500 to-green-500'
+                        : 'bg-gradient-to-r from-orange-400 to-yellow-400'
+                    }`}
+                    style={{ width: `${progress}%` }}
+                  ></div>
+                </div>
+
+                {/* Items List */}
+                <ul className="space-y-3 border-t-3 border-gray-300 pt-6">
+                  {meal.items.map((item: string, idx: number) => {
+                    const itemKey = `${dayName}-${meal.id}_item_${idx}`;
+                    const itemCompleted = completedItems[itemKey] || false;
+
+                    return (
+                      <li
+                        key={idx}
+                        className={`flex items-start gap-4 p-4 rounded-xl transition-all shadow-sm hover:shadow-md ${
+                          itemCompleted
+                            ? 'bg-gradient-to-r from-emerald-100 to-green-100 border-2 border-emerald-400'
+                            : 'bg-gradient-to-r from-orange-50 to-white hover:from-blue-50 hover:to-green-50 border-2 border-orange-200'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={itemCompleted}
+                          onChange={(e) => handleItemCheck(itemKey, e.target.checked)}
+                          disabled={!isToday}
+                          className={`mt-1 w-6 h-6 cursor-pointer accent-emerald-600 flex-shrink-0 ${!isToday ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        />
+                        <span
+                          className={`text-lg font-semibold leading-relaxed flex-1 ${
+                            itemCompleted
+                              ? 'text-emerald-700 line-through opacity-70'
+                              : 'text-gray-800'
+                          }`}
+                        >
+                          {item}
+                        </span>
+                        <span className="text-2xl flex-shrink-0">
+                          {itemCompleted ? '✅' : '📌'}
+                        </span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             );
