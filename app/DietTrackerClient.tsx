@@ -281,7 +281,7 @@ export function DietTrackerClient() {
             const canCollapse = isCompleted;
             const isExpanded = expandedMeals[mealKey] !== undefined
               ? canCollapse ? expandedMeals[mealKey] : true
-              : true; // Default to expanded
+              : !isCompleted; // Default: completed meals collapsed, incomplete expanded
 
             // Stacked card styling for collapsed completed meals
             const getCardStyles = () => {
@@ -434,7 +434,7 @@ export function DietTrackerClient() {
                         <span
                           className={`text-lg font-semibold leading-relaxed flex-1 ${
                             itemCompleted
-                              ? 'text-emerald-700 line-through opacity-70'
+                              ? 'text-emerald-700'
                               : 'text-gray-800'
                           }`}
                         >
