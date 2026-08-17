@@ -248,7 +248,7 @@ export function DietTrackerClient() {
               >
                 {/* Meal Header */}
                 <div className="flex items-center justify-between gap-4 mb-6">
-                  <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-4 flex-1">
                     <div className={`text-5xl p-3 rounded-xl ${isCompleted ? 'bg-emerald-200' : 'bg-orange-200'}`}>
                       {meal.icon}
                     </div>
@@ -259,19 +259,42 @@ export function DietTrackerClient() {
                       <div className={`text-3xl font-bold ${isCompleted ? 'text-emerald-800' : 'text-gray-800'}`}>
                         {meal.name}
                       </div>
+                      <div className="text-xs text-gray-600 mt-2 font-semibold">
+                        {isToday && !isCompleted ? '👆 Check box to mark all items as done' : ''}
+                        {isCompleted ? '✨ All items completed!' : ''}
+                      </div>
                     </div>
                   </div>
-                  <div className="flex flex-col items-center gap-2">
+
+                  {/* Large Meal Checkbox with Progress */}
+                  <div
+                    onClick={() => isToday && handleMealCheck(mealKey, !isCompleted)}
+                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition-all cursor-pointer border-4 ${
+                      isToday ? 'cursor-pointer' : 'cursor-not-allowed opacity-50'
+                    } ${
+                      isCompleted
+                        ? 'bg-gradient-to-br from-emerald-200 to-green-200 border-emerald-600 shadow-lg'
+                        : 'bg-gradient-to-br from-orange-100 to-yellow-100 border-orange-400 hover:shadow-lg'
+                    }`}
+                  >
                     <input
                       type="checkbox"
                       checked={isCompleted}
-                      onChange={(e) => handleMealCheck(mealKey, e.target.checked)}
+                      onChange={(e) => {
+                        e.stopPropagation();
+                        handleMealCheck(mealKey, e.target.checked);
+                      }}
                       disabled={!isToday}
-                      className={`w-10 h-10 cursor-pointer accent-emerald-500 ${!isToday ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      className={`w-12 h-12 cursor-pointer accent-emerald-600 ${!isToday ? 'opacity-50 cursor-not-allowed' : ''}`}
                     />
-                    <span className={`text-xs font-bold ${isCompleted ? 'text-emerald-700' : 'text-orange-700'}`}>
-                      {completedItemsCount}/{meal.items.length}
-                    </span>
+                    <div className="flex items-center gap-1">
+                      <span className={`text-sm font-bold ${isCompleted ? 'text-emerald-700' : 'text-orange-700'}`}>
+                        {completedItemsCount}
+                      </span>
+                      <span className={`text-xs font-bold ${isCompleted ? 'text-emerald-700' : 'text-orange-700'}`}>
+                        / {meal.items.length}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
