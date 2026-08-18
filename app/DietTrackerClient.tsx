@@ -512,6 +512,11 @@ export function DietTrackerClient() {
                     </div>
 
                     {/* Items List */}
+                    {isToday && (
+                      <div className="text-xs text-gray-600 mb-3 p-2 bg-blue-50 rounded">
+                        💡 Tip: Swipe left or long-press to skip an item • Swipe right to complete
+                      </div>
+                    )}
                     <ul className="space-y-3 border-t-3 border-gray-300 pt-6">
                   {meal.items.map((item: string, idx: number) => {
                     const itemKey = `${dayName}-${meal.id}_item_${idx}`;
@@ -528,28 +533,36 @@ export function DietTrackerClient() {
                           if (!isToday) return;
                           const touch = e.touches[0];
                           (e.currentTarget as any).touchStartX = touch.clientX;
+                          (e.currentTarget as any).touchStartTime = Date.now();
                         }}
                         onTouchMove={(e) => {
                           if (!isToday) return;
                           const touch = e.touches[0];
                           const startX = (e.currentTarget as any).touchStartX || touch.clientX;
                           const diff = touch.clientX - startX;
-                          if (Math.abs(diff) > 5) {
-                            setSwipeItem(itemKey);
-                            setSwipeAmount(diff);
-                          }
+                          setSwipeItem(itemKey);
+                          setSwipeAmount(diff);
                         }}
-                        onTouchEnd={() => {
-                          if (!isToday || Math.abs(swipeAmount) < 50) {
+                        onTouchEnd={(e) => {
+                          if (!isToday) {
                             setSwipeItem(null);
                             setSwipeAmount(0);
                             return;
                           }
-                          if (swipeAmount > 50) {
-                            handleSwipe(itemKey, 'right');
-                          } else if (swipeAmount < -50) {
+
+                          const timeDiff = Date.now() - ((e.currentTarget as any).touchStartTime || 0);
+                          // If long press (>500ms), skip. Otherwise check swipe distance
+                          if (timeDiff > 500) {
                             handleSwipe(itemKey, 'left');
+                          } else if (Math.abs(swipeAmount) >= 30) {
+                            if (swipeAmount > 30) {
+                              handleSwipe(itemKey, 'right');
+                            } else if (swipeAmount < -30) {
+                              handleSwipe(itemKey, 'left');
+                            }
                           }
+                          setSwipeItem(null);
+                          setSwipeAmount(0);
                         }}
                         className={`flex items-start gap-4 p-4 rounded-xl transition-all shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing ${
                           itemSkipped
@@ -591,9 +604,24 @@ export function DietTrackerClient() {
                         >
                           {item}
                         </span>
-                        <span className={`text-2xl flex-shrink-0 ${itemCompleted ? 'animate-checkmark-bounce' : ''}`}>
-                          {itemSkipped ? '⏭️' : itemCompleted ? '✅' : '📌'}
-                        </span>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className={`text-2xl ${itemCompleted ? 'animate-checkmark-bounce' : ''}`}>
+                            {itemSkipped ? '⏭️' : itemCompleted ? '✅' : '📌'}
+                          </span>
+                          {isToday && !itemCompleted && !itemSkipped && (
+                            <button
+                              onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                handleSwipe(itemKey, 'left');
+                              }}
+                              className="text-xs bg-gray-300 hover:bg-gray-400 text-gray-700 px-2 py-1 rounded transition-all"
+                              title="Skip this item (or swipe left / long-press)"
+                            >
+                              Skip
+                            </button>
+                          )}
+                        </div>
                       </li>
                     );
                   })}
