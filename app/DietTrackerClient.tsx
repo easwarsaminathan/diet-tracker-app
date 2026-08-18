@@ -7,9 +7,12 @@ import confetti from 'canvas-confetti';
 export function DietTrackerClient() {
   const [completedMeals, setCompletedMeals] = useState<Record<string, boolean>>({});
   const [completedItems, setCompletedItems] = useState<Record<string, boolean>>({});
+  const [skippedItems, setSkippedItems] = useState<Record<string, boolean>>({});
   const [expandedMeals, setExpandedMeals] = useState<Record<string, boolean>>({});
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [currentTime, setCurrentTime] = useState('');
+  const [swipeItem, setSwipeItem] = useState<string | null>(null);
+  const [swipeAmount, setSwipeAmount] = useState(0);
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
@@ -22,6 +25,11 @@ export function DietTrackerClient() {
     const savedItems = localStorage.getItem('dietTrackerItems');
     if (savedItems) {
       setCompletedItems(JSON.parse(savedItems));
+    }
+
+    const savedSkipped = localStorage.getItem('dietTrackerSkipped');
+    if (savedSkipped) {
+      setSkippedItems(JSON.parse(savedSkipped));
     }
 
     const today = new Date();
@@ -72,6 +80,38 @@ export function DietTrackerClient() {
 
   const saveItemProgress = (newItems: Record<string, boolean>) => {
     localStorage.setItem('dietTrackerItems', JSON.stringify(newItems));
+  };
+
+  const saveSkippedProgress = (newSkipped: Record<string, boolean>) => {
+    localStorage.setItem('dietTrackerSkipped', JSON.stringify(newSkipped));
+  };
+
+  const handleSwipe = (itemKey: string, direction: 'left' | 'right') => {
+    if (direction === 'right') {
+      // Complete item
+      handleItemCheck(itemKey, true);
+      // Unset skip if was skipped
+      if (skippedItems[itemKey]) {
+        const newSkipped = { ...skippedItems };
+        delete newSkipped[itemKey];
+        setSkippedItems(newSkipped);
+        saveSkippedProgress(newSkipped);
+      }
+    } else {
+      // Skip item
+      const newSkipped = { ...skippedItems, [itemKey]: true };
+      setSkippedItems(newSkipped);
+      saveSkippedProgress(newSkipped);
+      // Uncheck if was completed
+      if (completedItems[itemKey]) {
+        const newItems = { ...completedItems };
+        delete newItems[itemKey];
+        setCompletedItems(newItems);
+        saveItemProgress(newItems);
+      }
+    }
+    setSwipeItem(null);
+    setSwipeAmount(0);
   };
 
   const handleItemCheck = (itemKey: string, checked: boolean) => {
@@ -170,10 +210,12 @@ export function DietTrackerClient() {
   const isToday = dayNames[today.getDay()] === dayName;
 
   const completedCount = meals.filter((meal: any) => {
-    const itemsCompleted = meal.items.every((_: string, idx: number) =>
-      completedItems[`${dayName}-${meal.id}_item_${idx}`]
-    );
-    return itemsCompleted && meal.items.length > 0;
+    // Meal is complete when all items are either completed or skipped
+    const allDone = meal.items.every((_: string, idx: number) => {
+      const itemKey = `${dayName}-${meal.id}_item_${idx}`;
+      return completedItems[itemKey] || skippedItems[itemKey];
+    });
+    return allDone && meal.items.length > 0;
   }).length;
 
   const progressPercentage = meals.length > 0 ? (completedCount / meals.length) * 100 : 0;
@@ -331,12 +373,17 @@ export function DietTrackerClient() {
             const prevMealKey = index > 0 ? `${dayName}-${meals[index - 1].id}` : null;
             const isActive = isToday && (index === 0 || (prevMealKey && completedMeals[prevMealKey]));
 
-            // Check how many items are completed
+            // Check how many items are completed or skipped
             const completedItemsCount = meal.items.filter((_: string, idx: number) =>
               completedItems[`${dayName}-${meal.id}_item_${idx}`]
             ).length;
 
-            const isCompleted = completedItemsCount === meal.items.length && meal.items.length > 0;
+            const skippedItemsCount = meal.items.filter((_: string, idx: number) =>
+              skippedItems[`${dayName}-${meal.id}_item_${idx}`]
+            ).length;
+
+            // Meal is complete when all items are either completed or skipped
+            const isCompleted = (completedItemsCount + skippedItemsCount) === meal.items.length && meal.items.length > 0;
             const progress = Math.round((completedItemsCount / meal.items.length) * 100);
 
             // Determine if expanded - ONLY completed meals can collapse, incomplete always expanded
@@ -469,33 +516,75 @@ export function DietTrackerClient() {
                   {meal.items.map((item: string, idx: number) => {
                     const itemKey = `${dayName}-${meal.id}_item_${idx}`;
                     const itemCompleted = completedItems[itemKey] || false;
+                    const itemSkipped = skippedItems[itemKey] || false;
                     const foodIcon = getFoodIcon(item);
+                    const isCurrentSwipe = swipeItem === itemKey;
+                    const swipeOffset = isCurrentSwipe ? swipeAmount : 0;
 
                     return (
                       <li
                         key={idx}
-                        className={`flex items-start gap-4 p-4 rounded-xl transition-all shadow-sm hover:shadow-md ${
-                          itemCompleted
+                        onTouchStart={(e) => {
+                          if (!isToday) return;
+                          const touch = e.touches[0];
+                          (e.currentTarget as any).touchStartX = touch.clientX;
+                        }}
+                        onTouchMove={(e) => {
+                          if (!isToday) return;
+                          const touch = e.touches[0];
+                          const startX = (e.currentTarget as any).touchStartX || touch.clientX;
+                          const diff = touch.clientX - startX;
+                          if (Math.abs(diff) > 5) {
+                            setSwipeItem(itemKey);
+                            setSwipeAmount(diff);
+                          }
+                        }}
+                        onTouchEnd={() => {
+                          if (!isToday || Math.abs(swipeAmount) < 50) {
+                            setSwipeItem(null);
+                            setSwipeAmount(0);
+                            return;
+                          }
+                          if (swipeAmount > 50) {
+                            handleSwipe(itemKey, 'right');
+                          } else if (swipeAmount < -50) {
+                            handleSwipe(itemKey, 'left');
+                          }
+                        }}
+                        className={`flex items-start gap-4 p-4 rounded-xl transition-all shadow-sm hover:shadow-md cursor-grab active:cursor-grabbing ${
+                          itemSkipped
+                            ? 'bg-gradient-to-r from-gray-200 to-gray-300 border-2 border-gray-400 opacity-60'
+                            : itemCompleted
                             ? 'bg-gradient-to-r from-emerald-100 to-green-100 border-2 border-emerald-400'
                             : `${foodIcon.bgColor} border-2 border-gray-200 hover:shadow-lg`
                         }`}
+                        style={{
+                          transform: `translateX(${swipeOffset * 0.3}px)`,
+                          backgroundColor: isCurrentSwipe
+                            ? swipeAmount > 0
+                              ? 'rgba(34, 197, 94, 0.1)'
+                              : 'rgba(107, 114, 128, 0.1)'
+                            : undefined
+                        }}
                       >
                         <input
                           type="checkbox"
                           checked={itemCompleted}
                           onChange={(e) => handleItemCheck(itemKey, e.target.checked)}
-                          disabled={!isToday}
+                          disabled={!isToday || itemSkipped}
                           className={`mt-1 w-6 h-6 cursor-pointer accent-emerald-600 flex-shrink-0 ${!isToday ? 'opacity-50 cursor-not-allowed' : ''}`}
                         />
 
                         {/* Food Icon with Color */}
-                        <div className={`text-2xl ${foodIcon.color} flex-shrink-0 p-2 rounded-lg ${foodIcon.bgColor}`}>
+                        <div className={`text-2xl ${itemSkipped ? 'opacity-40' : foodIcon.color} flex-shrink-0 p-2 rounded-lg ${foodIcon.bgColor}`}>
                           {foodIcon.emoji}
                         </div>
 
                         <span
                           className={`text-lg font-semibold leading-relaxed flex-1 ${
-                            itemCompleted
+                            itemSkipped
+                              ? 'text-gray-500 line-through'
+                              : itemCompleted
                               ? 'text-emerald-700'
                               : 'text-gray-800'
                           }`}
@@ -503,7 +592,7 @@ export function DietTrackerClient() {
                           {item}
                         </span>
                         <span className={`text-2xl flex-shrink-0 ${itemCompleted ? 'animate-checkmark-bounce' : ''}`}>
-                          {itemCompleted ? '✅' : '📌'}
+                          {itemSkipped ? '⏭️' : itemCompleted ? '✅' : '📌'}
                         </span>
                       </li>
                     );
