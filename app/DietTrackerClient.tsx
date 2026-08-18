@@ -382,31 +382,46 @@ export function DietTrackerClient() {
               skippedItems[`${dayName}-${meal.id}_item_${idx}`]
             ).length;
 
-            // Meal is complete when all items are either completed or skipped
-            const isCompleted = (completedItemsCount + skippedItemsCount) === meal.items.length && meal.items.length > 0;
+            // Meal states
+            const allItemsHandled = (completedItemsCount + skippedItemsCount) === meal.items.length && meal.items.length > 0;
+            const allItemsSkipped = skippedItemsCount === meal.items.length && meal.items.length > 0;
+            const isCompleted = completedItemsCount === meal.items.length && meal.items.length > 0;
+            const isMealSkipped = allItemsSkipped && !isCompleted;
+            const isMealMixed = allItemsHandled && !isCompleted && !isMealSkipped;
             const progress = Math.round((completedItemsCount / meal.items.length) * 100);
 
-            // Determine if expanded - ONLY completed meals can collapse, incomplete always expanded
-            const canCollapse = isCompleted;
+            // Determine if expanded - completed or skipped meals can collapse, incomplete always expanded
+            const canCollapse = allItemsHandled;
             const isExpanded = expandedMeals[mealKey] !== undefined
               ? canCollapse ? expandedMeals[mealKey] : true
-              : !isCompleted; // Default: completed meals collapsed, incomplete expanded
+              : !allItemsHandled; // Default: completed/skipped meals collapsed, incomplete expanded
 
-            // Stacked card styling for collapsed completed meals
+            // Stacked card styling for collapsed meals
             const getCardStyles = () => {
-              if (!isCompleted || isExpanded) {
+              if (!allItemsHandled || isExpanded) {
+                // Expanded view
                 return {
                   container: `rounded-3xl shadow-lg border-l-4 transition-all duration-500 backdrop-blur-sm ${
                     isCompleted
                       ? 'border-l-emerald-600 bg-gradient-to-br from-emerald-100 via-green-50 to-teal-50 border-4 border-emerald-400 animate-slide-down'
+                      : isMealSkipped
+                      ? 'border-l-gray-600 bg-gradient-to-br from-gray-100 via-gray-50 to-gray-50 border-4 border-gray-400 animate-slide-down'
+                      : isMealMixed
+                      ? 'border-l-blue-600 bg-gradient-to-br from-blue-100 via-cyan-50 to-blue-50 border-4 border-blue-400 animate-slide-down'
                       : 'border-l-orange-500 bg-gradient-to-br from-white to-orange-50 border-2 border-orange-200'
-                  } ${isActive && !isCompleted ? 'opacity-100 -translate-y-2 shadow-2xl scale-105' : isToday && !isCompleted ? 'opacity-70' : 'opacity-100'} p-8`,
-                  clickable: isCompleted ? 'cursor-pointer' : ''
+                  } ${isActive && !allItemsHandled ? 'opacity-100 -translate-y-2 shadow-2xl scale-105' : isToday && !allItemsHandled ? 'opacity-70' : 'opacity-100'} p-8`,
+                  clickable: allItemsHandled ? 'cursor-pointer' : ''
                 };
               }
               // Collapsed stacked style
+              const bgColor = isCompleted
+                ? 'from-emerald-500 to-green-600'
+                : isMealSkipped
+                ? 'from-gray-500 to-gray-600'
+                : 'from-blue-500 to-cyan-600';
+
               return {
-                container: `rounded-2xl shadow-md transition-all duration-500 cursor-pointer hover:shadow-lg hover:scale-105 bg-gradient-to-r from-emerald-500 to-green-600 border-none animate-slide-up`,
+                container: `rounded-2xl shadow-md transition-all duration-500 cursor-pointer hover:shadow-lg hover:scale-105 bg-gradient-to-r ${bgColor} border-none animate-slide-up`,
                 clickable: 'h-16 flex items-center px-6'
               };
             };
@@ -417,10 +432,10 @@ export function DietTrackerClient() {
               <div
                 key={meal.id}
                 className={`${styles.container} ${styles.clickable}`}
-                onClick={() => isCompleted && toggleMealExpanded(mealKey)}
+                onClick={() => allItemsHandled && toggleMealExpanded(mealKey)}
               >
                 {/* Collapsed View - Stacked Header Style */}
-                {!isExpanded && isCompleted && (
+                {!isExpanded && allItemsHandled && (
                   <div className="flex items-center justify-between gap-4 w-full">
                     <div className="flex items-center gap-4 flex-1">
                       <div className="text-3xl text-white">
@@ -433,7 +448,9 @@ export function DietTrackerClient() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 text-white">
-                      <span className="text-xl">✅</span>
+                      <span className="text-xl">
+                        {isCompleted ? '✅' : isMealSkipped ? '⏭️' : '✓📋'}
+                      </span>
                     </div>
                   </div>
                 )}
